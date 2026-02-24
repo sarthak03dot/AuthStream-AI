@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { Box, Typography, Button, useTheme, Fade, IconButton, Badge } from "@mui/material";
-import type { Theme } from "@mui/material";
+import { Box, Typography, Button, useTheme, Fade, IconButton, Badge, alpha } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
 import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../auth/auth.context";
 import { API_BASE_URL } from "../../lib/config";
 import { MessageBubble } from "./MessageBubble";
@@ -10,126 +10,59 @@ import { ChatInput } from "./ChatInput";
 import StopCircleIcon from "@mui/icons-material/StopCircle";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import SparklesIcon from "@mui/icons-material/AutoAwesome";
 
-const TypingIndicator = ({ styles }: { styles: any }) => (
-    <Box sx={styles.typingContainer}>
-        {[0, 1, 2].map((i) => (
-            <Box
-                key={i}
-                sx={{
-                    ...styles.typingDot,
-                    animationDelay: `${i * 0.2}s`,
-                }}
-            />
-        ))}
-    </Box>
-);
+const MotionBox = motion(Box);
+
+const TypingIndicator = () => {
+    const theme = useTheme();
+    return (
+        <MotionBox
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            sx={{
+                display: "flex",
+                gap: 0.8,
+                p: 2,
+                ml: 1,
+                backgroundColor: alpha(theme.palette.background.paper, 0.4),
+                backdropFilter: "blur(8px)",
+                borderRadius: "16px 16px 16px 4px",
+                width: "fit-content",
+                border: "1px solid rgba(255, 255, 255, 0.05)",
+            }}
+        >
+            {[0, 1, 2].map((i) => (
+                <Box
+                    key={i}
+                    component={motion.div}
+                    animate={{
+                        scale: [1, 1.2, 1],
+                        opacity: [0.4, 1, 0.4],
+                    }}
+                    transition={{
+                        duration: 1.4,
+                        repeat: Infinity,
+                        delay: i * 0.2,
+                        ease: "easeInOut",
+                    }}
+                    sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        backgroundColor: theme.palette.primary.main,
+                    }}
+                />
+            ))}
+        </MotionBox>
+    );
+};
 
 interface Message {
     role: "user" | "assistant";
     content: string;
-    audio?: string; // Base64 audio string
+    audio?: string;
 }
-
-const getStyles = (theme: Theme) => ({
-    root: {
-        height: "calc(100vh - 120px)",
-        display: "flex",
-        flexDirection: "column",
-        maxWidth: "1000px",
-        margin: "0 auto",
-        width: "100%",
-    },
-    messageList: {
-        flexGrow: 1,
-        mb: 2,
-        p: { xs: 2, sm: 3 },
-        overflowY: "auto",
-        backgroundColor: "transparent",
-        display: "flex",
-        flexDirection: "column",
-        gap: 1,
-        "&::-webkit-scrollbar": {
-            width: "6px",
-        },
-        "&::-webkit-scrollbar-thumb": {
-            backgroundColor: "rgba(0,0,0,0.05)",
-            borderRadius: "10px",
-        },
-    },
-    emptyState: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100%",
-        textAlign: "center",
-        px: 3,
-    },
-    emptyIcon: {
-        fontSize: 48,
-        color: theme.palette.primary.main,
-        mb: 2,
-        opacity: 0.8,
-    },
-    error: {
-        textAlign: "center" as const,
-        my: 2,
-        p: 1.5,
-        backgroundColor: "rgba(239, 68, 68, 0.05)",
-        borderRadius: 2,
-        color: "error.main",
-        fontSize: "0.875rem",
-        border: "1px solid rgba(239, 68, 68, 0.1)",
-    },
-    streamingIndicator: {
-        display: "flex",
-        justifyContent: "center",
-        mb: 2,
-    },
-    stopButton: {
-        borderRadius: 20,
-        px: 3,
-        borderColor: theme.palette.divider,
-        color: theme.palette.text.secondary,
-        "&:hover": {
-            borderColor: theme.palette.text.secondary,
-            backgroundColor: "rgba(0,0,0,0.02)",
-        },
-    },
-    scrollButton: {
-        position: "absolute" as const,
-        bottom: 100,
-        right: { xs: 20, sm: 40 },
-        backgroundColor: theme.palette.background.paper,
-        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-        "&:hover": {
-            backgroundColor: "#f8f9fa",
-        },
-        zIndex: 10,
-    },
-    typingContainer: {
-        display: "flex",
-        gap: 0.5,
-        p: 1.5,
-        ml: 1,
-        backgroundColor: "rgba(0,0,0,0.03)",
-        borderRadius: "12px 12px 12px 2px",
-        width: "fit-content"
-    },
-    typingDot: {
-        width: 6,
-        height: 6,
-        borderRadius: "50%",
-        backgroundColor: "text.secondary",
-        opacity: 0.4,
-        animation: "typing 1.4s infinite ease-in-out both",
-        "@keyframes typing": {
-            "0%, 80%, 100%": { transform: "scale(0.6)", opacity: 0.4 },
-            "40%": { transform: "scale(1.2)", opacity: 1 }
-        }
-    },
-});
 
 export function ChatWindow() {
     const [searchParams] = useSearchParams();
@@ -141,7 +74,6 @@ export function ChatWindow() {
     const [error, setError] = useState<string | null>(null);
     const { token } = useAuth();
     const theme = useTheme();
-    const styles = getStyles(theme);
     const scrollRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
     const isAtBottomRef = useRef(true);
@@ -185,7 +117,7 @@ export function ChatWindow() {
         if (isStreaming && isAtBottomRef.current) {
             scrollRef.current?.scrollTo({
                 top: scrollRef.current.scrollHeight,
-                behavior: "auto", // Auto for faster updates during streaming
+                behavior: "auto",
             });
         }
     }, [messages, isStreaming]);
@@ -273,12 +205,8 @@ export function ChatWindow() {
                                 break;
                             }
 
-                            if (data.done) {
-                                break;
-                            }
-                        } catch (e) {
-                            // Partial chunks can fail parsing
-                        }
+                            if (data.done) break;
+                        } catch (e) { }
                     }
                 }
             }
@@ -319,9 +247,7 @@ export function ChatWindow() {
                 { role: "assistant", content: aiResponse, audio }
             ]);
 
-            // If it's a new chat, we might need to update URL (optional but good for consistency)
             if (!chatId && newChatId) {
-                // Update search params without full reload
                 const newParams = new URLSearchParams(window.location.search);
                 newParams.set("id", newChatId);
                 window.history.replaceState(null, "", "?" + newParams.toString());
@@ -336,64 +262,210 @@ export function ChatWindow() {
     };
 
     return (
-        <Box sx={styles.root}>
+        <Box sx={{
+            height: "calc(100vh - 140px)",
+            display: "flex",
+            flexDirection: "column",
+            maxWidth: "1100px",
+            margin: "0 auto",
+            width: "100%",
+            position: "relative",
+        }}>
+            <AnimatePresence>
+                {messages.length > 0 && (
+                    <MotionBox
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                            mb: 2,
+                            px: 2,
+                            py: 1,
+                            borderRadius: 3,
+                            backgroundColor: alpha(theme.palette.background.paper, 0.4),
+                            backdropFilter: "blur(8px)",
+                            border: "1px solid rgba(255, 255, 255, 0.05)",
+                            width: "fit-content",
+                        }}
+                    >
+                        <SparklesIcon sx={{ fontSize: 18, color: theme.palette.primary.main }} />
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "text.secondary" }}>
+                            Current Session
+                        </Typography>
+                    </MotionBox>
+                )}
+            </AnimatePresence>
+
             <Box
-                sx={styles.messageList}
                 ref={scrollRef}
+                sx={{
+                    flexGrow: 1,
+                    mb: 3,
+                    p: { xs: 2, sm: 3 },
+                    overflowY: "auto",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1.5,
+                    scrollbarWidth: "none",
+                    "&::-webkit-scrollbar": { display: "none" },
+                    maskImage: "linear-gradient(to bottom, transparent, black 5%, black 95%, transparent)",
+                }}
             >
                 {messages.length === 0 && !isStreaming && (
-                    <Fade in timeout={800}>
-                        <Box sx={styles.emptyState}>
-                            <AutoAwesomeIcon sx={styles.emptyIcon} />
-                            <Typography variant="h5" fontWeight={700} gutterBottom>
+                    <Fade in timeout={1200}>
+                        <Box sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: "100%",
+                            textAlign: "center",
+                            px: 3,
+                            opacity: 0.8
+                        }}>
+                            <Box sx={{
+                                width: 80,
+                                height: 80,
+                                borderRadius: "30%",
+                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                mb: 4,
+                                position: "relative"
+                            }}>
+                                <AutoAwesomeIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />
+                                <Box sx={{
+                                    position: "absolute",
+                                    top: -4,
+                                    right: -4,
+                                    width: 12,
+                                    height: 12,
+                                    borderRadius: "50%",
+                                    backgroundColor: theme.palette.secondary.main,
+                                    boxShadow: `0 0 10px ${theme.palette.secondary.main}`
+                                }} />
+                            </Box>
+                            <Typography variant="h4" fontWeight={900} gutterBottom sx={{ letterSpacing: "-1px" }}>
                                 How can I assist you today?
                             </Typography>
-                            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 450 }}>
-                                Start a fresh conversation or pick up where you left off from the sidebar. I'm here to help with anything.
+                            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 450, fontSize: "1.1rem" }}>
+                                Start a fresh conversation or pick up where you left off.
+                                I'm ready for complex reasoning, creative tasks, and more.
                             </Typography>
                         </Box>
                     </Fade>
                 )}
-                {messages.map((msg, index) => (
-                    <MessageBubble key={index} message={msg} />
-                ))}
+
+                <AnimatePresence initial={false}>
+                    {messages.map((msg, index) => (
+                        <MotionBox
+                            key={index}
+                            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <MessageBubble message={msg} />
+                        </MotionBox>
+                    ))}
+                </AnimatePresence>
+
                 {isStreaming && messages[messages.length - 1]?.role === "user" && (
-                    <TypingIndicator styles={styles} />
+                    <TypingIndicator />
                 )}
+
                 {error && (
-                    <Typography sx={styles.error}>
+                    <MotionBox
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        sx={{
+                            textAlign: "center",
+                            my: 3,
+                            p: 2,
+                            backgroundColor: alpha(theme.palette.error.main, 0.1),
+                            borderRadius: 4,
+                            color: "error.main",
+                            fontSize: "0.9rem",
+                            border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
+                            maxWidth: "400px",
+                            mx: "auto"
+                        }}
+                    >
                         {error}
-                    </Typography>
+                    </MotionBox>
                 )}
             </Box>
 
             <Fade in={showScrollButton}>
                 <IconButton
                     onClick={scrollToBottom}
-                    sx={styles.scrollButton}
+                    sx={{
+                        position: "absolute",
+                        bottom: 120,
+                        right: { xs: 20, sm: 40 },
+                        backgroundColor: alpha(theme.palette.background.paper, 0.8),
+                        backdropFilter: "blur(12px)",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+                        "&:hover": {
+                            backgroundColor: theme.palette.background.paper,
+                        },
+                        zIndex: 10,
+                    }}
                     size="small"
                 >
-                    <Badge badgeContent={unreadCount} color="error" overlap="circular">
+                    <Badge badgeContent={unreadCount} color="error">
                         <KeyboardArrowDownIcon />
                     </Badge>
                 </IconButton>
             </Fade>
 
-            {isStreaming && (
-                <Box sx={styles.streamingIndicator}>
-                    <Button
-                        variant="outlined"
-                        startIcon={<StopCircleIcon />}
-                        onClick={handleStopStreaming}
-                        size="small"
-                        sx={styles.stopButton}
-                    >
-                        Stop Generation
-                    </Button>
-                </Box>
-            )}
-
-            <ChatInput onSendMessage={handleSendMessage} onSendAudio={handleSendAudio} disabled={isStreaming} />
+            <Box sx={{
+                position: "relative",
+                backgroundColor: alpha(theme.palette.background.paper, 0.4),
+                backdropFilter: "blur(16px)",
+                borderRadius: 6,
+                p: 1.5,
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                boxShadow: "0 20px 40px rgba(0, 0, 0, 0.2)",
+            }}>
+                {isStreaming && (
+                    <Box sx={{
+                        position: "absolute",
+                        top: -50,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        zIndex: 1
+                    }}>
+                        <Button
+                            variant="contained"
+                            color="inherit"
+                            startIcon={<StopCircleIcon />}
+                            onClick={handleStopStreaming}
+                            size="small"
+                            sx={{
+                                borderRadius: 100,
+                                px: 3,
+                                py: 1,
+                                fontSize: "0.75rem",
+                                fontWeight: 700,
+                                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                                backdropFilter: "blur(10px)",
+                                border: "1px solid rgba(255, 255, 255, 0.1)",
+                                "&:hover": {
+                                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                                }
+                            }}
+                        >
+                            Stop Generation
+                        </Button>
+                    </Box>
+                )}
+                <ChatInput onSendMessage={handleSendMessage} onSendAudio={handleSendAudio} disabled={isStreaming} />
+            </Box>
         </Box>
     );
 }
+

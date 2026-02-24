@@ -11,74 +11,15 @@ import {
   IconButton,
   useTheme,
   useMediaQuery,
+  alpha,
 } from "@mui/material";
-import type { Theme } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import LogoutIcon from "@mui/icons-material/Logout";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChatSidebar } from "../features/chat/ChatSidebar";
+import { CustomCursor } from "../components/CustomCursor";
 
-const drawerWidth = 280;
-
-const getStyles = (theme: Theme) => ({
-  root: {
-    display: "flex",
-    backgroundColor: theme.palette.background.default,
-    minHeight: "100vh",
-  },
-  appBar: {
-    zIndex: theme.zIndex.drawer + 1,
-    backdropFilter: "blur(12px)",
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    borderBottom: `1px solid ${theme.palette.divider}`,
-    color: theme.palette.text.primary,
-  },
-  menuButton: {
-    mr: 2,
-    display: { sm: "none" },
-  },
-  title: {
-    flexGrow: 1,
-    fontWeight: 800,
-    letterSpacing: "-0.5px",
-    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-  },
-  nav: {
-    width: { sm: drawerWidth },
-    flexShrink: { sm: 0 },
-  },
-  drawerPaper: {
-    boxSizing: "border-box",
-    width: drawerWidth,
-    borderRight: `1px solid ${theme.palette.divider}`,
-    backgroundColor: theme.palette.background.paper,
-  },
-  main: {
-    flexGrow: 1,
-    p: { xs: 2, sm: 3 },
-    width: { sm: `calc(100% - ${drawerWidth}px)` },
-    position: "relative",
-  },
-  headerWrapper: {
-    display: "flex",
-    alignItems: "center"
-  },
-  toolbar: {
-    justifyContent: "space-between"
-  },
-  logoutButton: {
-    borderRadius: 2,
-    textTransform: "none" as const,
-    fontWeight: 600
-  },
-  mobileDrawer: {
-    display: { xs: "block", sm: "none" }
-  },
-  desktopDrawer: {
-    display: { xs: "none", sm: "block" }
-  }
-});
+const drawerWidth = 300;
 
 export function ProtectedLayout() {
   const { token, logout, expiresIn } = useAuth();
@@ -86,7 +27,6 @@ export function ProtectedLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
-  const styles = getStyles(theme);
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   if (!token) {
@@ -110,39 +50,69 @@ export function ProtectedLayout() {
   const selectedChatId = new URLSearchParams(location.search).get("id") || undefined;
 
   return (
-    <Box sx={styles.root}>
-      <AppBar position="fixed" sx={styles.appBar} elevation={0}>
-        <Toolbar sx={styles.toolbar}>
-          <Box sx={styles.headerWrapper}>
+    <Box sx={{ display: "flex", minHeight: "100vh", background: "transparent" }}>
+      <CustomCursor />
+      <AppBar
+        position="fixed"
+        sx={{
+          zIndex: theme.zIndex.drawer + 1,
+          backgroundColor: alpha(theme.palette.background.default, 0.7),
+          backdropFilter: "blur(12px)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          boxShadow: "none",
+        }}
+      >
+        <Toolbar sx={{ justifyContent: "space-between", px: { xs: 2, sm: 4 } }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
             <IconButton
               color="inherit"
               aria-label="open drawer"
               edge="start"
               onClick={handleDrawerToggle}
-              sx={styles.menuButton}
+              sx={{ mr: 2, display: { sm: "none" } }}
             >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" noWrap component="div" sx={styles.title}>
-              AI Chat Bot
+            <Typography variant="h6" noWrap sx={{
+              fontWeight: 900,
+              letterSpacing: "-0.5px",
+              background: "linear-gradient(135deg, #6366f1 0%, #ec4899 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}>
+              AuthStream AI
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
             {expiresIn !== null && (
-              <Typography variant="body2" sx={{
-                color: expiresIn < 60 ? 'error.main' : 'text.secondary',
-                fontWeight: 600,
+              <Box sx={{
+                px: 2,
+                py: 0.5,
+                borderRadius: 2,
+                backgroundColor: alpha(expiresIn < 60 ? theme.palette.error.main : theme.palette.primary.main, 0.1),
+                border: `1px solid ${alpha(expiresIn < 60 ? theme.palette.error.main : theme.palette.primary.main, 0.2)}`,
                 display: { xs: 'none', md: 'block' }
               }}>
-                Session expires in: {Math.floor(expiresIn / 60)}:{String(expiresIn % 60).padStart(2, '0')}
-              </Typography>
+                <Typography variant="caption" sx={{
+                  color: expiresIn < 60 ? 'error.main' : 'primary.light',
+                  fontWeight: 700,
+                  fontFamily: 'monospace'
+                }}>
+                  SESSION: {Math.floor(expiresIn / 60)}:{String(expiresIn % 60).padStart(2, '0')}
+                </Typography>
+              </Box>
             )}
             <Button
               variant="outlined"
               size="small"
               startIcon={<LogoutIcon />}
               onClick={logout}
-              sx={styles.logoutButton}
+              sx={{
+                borderRadius: 2,
+                borderColor: "rgba(255, 255, 255, 0.1)",
+                "&:hover": { borderColor: "rgba(255, 255, 255, 0.3)" }
+              }}
             >
               Logout
             </Button>
@@ -150,15 +120,21 @@ export function ProtectedLayout() {
         </Toolbar>
       </AppBar>
 
-      <Box component="nav" sx={styles.nav}>
+      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
         <Drawer
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{ keepMounted: true }}
           sx={{
-            ...styles.mobileDrawer,
-            "& .MuiDrawer-paper": styles.drawerPaper,
+            display: { xs: "block", sm: "none" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
+              backgroundColor: alpha(theme.palette.background.default, 0.9),
+              backdropFilter: "blur(20px)",
+              borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+            },
           }}
         >
           <Toolbar />
@@ -171,8 +147,15 @@ export function ProtectedLayout() {
         <Drawer
           variant="permanent"
           sx={{
-            ...styles.desktopDrawer,
-            "& .MuiDrawer-paper": styles.drawerPaper,
+            display: { xs: "none", sm: "block" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
+              backgroundColor: alpha(theme.palette.background.default, 0.5),
+              backdropFilter: "blur(12px)",
+              borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+              backgroundImage: "none",
+            },
           }}
           open
         >
@@ -185,10 +168,27 @@ export function ProtectedLayout() {
         </Drawer>
       </Box>
 
-      <Box component="main" sx={styles.main}>
+      <Box component="main" sx={{
+        flexGrow: 1,
+        p: { xs: 2, sm: 4 },
+        width: { sm: `calc(100% - ${drawerWidth}px)` },
+        position: "relative"
+      }}>
         <Toolbar />
-        <Outlet />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname + location.search}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            style={{ height: "100%" }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </Box>
     </Box>
   );
 }
+

@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../features/auth/auth.context";
+import { CustomCursor } from "../components/CustomCursor";
 
 export function PublicLayout() {
   const { token } = useAuth();
@@ -8,5 +9,10 @@ export function PublicLayout() {
     return <Navigate to="/chat" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <CustomCursor />
+      <Outlet />
+    </>
+  );
 }

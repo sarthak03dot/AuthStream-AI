@@ -13,86 +13,10 @@ import {
     Link as MuiLink,
     alpha,
     Stack,
+    Container,
 } from "@mui/material";
-import type { Theme } from "@mui/material";
-
-const getStyles = (theme: Theme) => ({
-    "@keyframes slideInLeft": {
-        "0%": { opacity: 0, transform: "translateX(-30px)" },
-        "100%": { opacity: 1, transform: "translateX(0)" },
-    },
-    "@keyframes slideInRight": {
-        "0%": { opacity: 0, transform: "translateX(30px)" },
-        "100%": { opacity: 1, transform: "translateX(0)" },
-    },
-    root: {
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: { xs: "column", md: "row-reverse" } as const, // Reverse for Form Left, Banner Right
-        backgroundColor: "#fff",
-    },
-    bannerSide: {
-        flex: 1,
-        display: { xs: "none", md: "flex" },
-        background: `linear-gradient(135deg, ${theme.palette.secondary.dark} 0%, ${theme.palette.secondary.main} 50%, ${theme.palette.primary.light} 100%)`,
-        flexDirection: "column" as const,
-        justifyContent: "center",
-        alignItems: "center",
-        color: "#fff",
-        padding: 8,
-        position: "relative" as const,
-        overflow: "hidden",
-        "&::before": {
-            content: '""',
-            position: "absolute",
-            width: "200%",
-            height: "200%",
-            background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)",
-            top: "-50%",
-            left: "-50%",
-        }
-    },
-    formSide: {
-        flex: 1,
-        display: "flex",
-        flexDirection: "column" as const,
-        justifyContent: "center",
-        alignItems: "center",
-        padding: { xs: 4, md: 10 },
-        animation: "slideInLeft 0.8s ease-out",
-    },
-    formWrapper: {
-        width: "100%",
-        maxWidth: 400,
-    },
-    title: {
-        fontWeight: 800,
-        marginBottom: 1,
-        background: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
-        WebkitBackgroundClip: "text",
-        WebkitTextFillColor: "transparent",
-    },
-    subtitle: {
-        color: theme.palette.text.secondary,
-        marginBottom: 5,
-        fontSize: "1rem",
-        fontWeight: 500,
-    },
-    bannerTitle: {
-        fontWeight: 800,
-        fontSize: "3rem",
-        textAlign: "center" as const,
-        marginBottom: 2,
-        animation: "slideInRight 0.8s ease-out",
-    },
-    bannerSubtitle: {
-        fontSize: "1.2rem",
-        textAlign: "center" as const,
-        opacity: 0.9,
-        maxWidth: "80%",
-        animation: "slideInRight 0.8s ease-out 0.2s forwards",
-    },
-});
+import { motion } from "framer-motion";
+import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 
 const signupSchema = z
     .object({
@@ -107,10 +31,12 @@ const signupSchema = z
 
 type SignupInput = z.infer<typeof signupSchema>;
 
+const MotionBox = motion(Box);
+const MotionTypography = motion(Typography);
+
 export function Signup() {
     const navigate = useNavigate();
     const theme = useTheme();
-    const styles = getStyles(theme);
     const { login } = useAuth();
 
     const {
@@ -130,83 +56,114 @@ export function Signup() {
             login(res);
             navigate("/chat");
         } catch (error: any) {
-            alert(error.response?.data?.message || "Registration failed");
+            console.error(error);
         }
     };
 
     return (
-        <Box sx={styles.root}>
-            {/* Banner Side (Right) */}
-            <Box sx={styles.bannerSide}>
-                <Typography variant="h2" sx={styles.bannerTitle}>
-                    Join Us Today!
-                </Typography>
-                <Typography sx={styles.bannerSubtitle}>
-                    Create an account and start interacting with the most advanced AI models in seconds.
-                </Typography>
-            </Box>
-            {/* Form Side (Left) */}
-            <Box sx={styles.formSide}>
-                <Box sx={styles.formWrapper}>
-                    <Typography
-                        variant="h6"
-                        fontWeight={800}
-                        color="secondary"
-                        sx={{ mb: 4, letterSpacing: 1 }}
+        <Box sx={{
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+            overflow: "hidden",
+            background: "transparent"
+        }}>
+            {/* Background Decorative Elements */}
+            <Box sx={{
+                position: "absolute",
+                top: "-15%",
+                left: "-10%",
+                width: "700px",
+                height: "700px",
+                background: `radial-gradient(circle, ${alpha(theme.palette.secondary.main, 0.12)} 0%, transparent 70%)`,
+                zIndex: -1,
+            }} />
+            <Box sx={{
+                position: "absolute",
+                bottom: "-15%",
+                right: "-10%",
+                width: "600px",
+                height: "600px",
+                background: `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.1)} 0%, transparent 70%)`,
+                zIndex: -1,
+            }} />
+
+            <Container maxWidth="sm">
+                <MotionBox
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    sx={{
+                        p: { xs: 4, md: 6 },
+                        borderRadius: 6,
+                        backgroundColor: alpha(theme.palette.background.paper, 0.6),
+                        backdropFilter: "blur(20px)",
+                        border: "1px solid rgba(255, 255, 255, 0.08)",
+                        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+                        textAlign: "center",
+                    }}
+                >
+                    <MotionBox
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                        sx={{
+                            display: "inline-flex",
+                            p: 2,
+                            borderRadius: "30%",
+                            backgroundColor: alpha(theme.palette.secondary.main, 0.1),
+                            mb: 4,
+                        }}
                     >
-                        AI CHAT BOT
-                    </Typography>
-                    <Typography variant="h4" sx={styles.title}>
+                        <RocketLaunchIcon sx={{ fontSize: 40, color: theme.palette.secondary.main }} />
+                    </MotionBox>
+
+                    <MotionTypography variant="h3" sx={{
+                        fontWeight: 900,
+                        mb: 1,
+                        letterSpacing: "-1.5px",
+                        background: "linear-gradient(135deg, #fff 0%, #cbd5e1 100%)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                    }}>
                         Create Account
-                    </Typography>
-                    <Typography sx={styles.subtitle}>
-                        Start your journey with AI Chat Bot
+                    </MotionTypography>
+                    <Typography variant="body1" color="text.secondary" sx={{ mb: 5, fontSize: "1.1rem" }}>
+                        Join AuthStream AI and experience the future of chat
                     </Typography>
 
                     <Stack component="form" onSubmit={handleSubmit(onSubmit)} spacing={3} noValidate>
                         <TextField
                             fullWidth
-                            label="Email Address"
+                            label="Email"
                             placeholder="name@example.com"
-                            autoComplete="email"
-                            autoFocus
                             {...register("email")}
                             error={!!errors.email}
                             helperText={errors.email?.message}
-                            sx={{
-                                "& .MuiOutlinedInput-root": {
-                                    borderRadius: "12px",
-                                }
-                            }}
                         />
+
                         <TextField
                             fullWidth
                             label="Password"
-                            placeholder="Min 6 characters"
                             type="password"
+                            placeholder="Min 6 characters"
                             {...register("password")}
                             error={!!errors.password}
                             helperText={errors.password?.message}
-                            sx={{
-                                "& .MuiOutlinedInput-root": {
-                                    borderRadius: "12px",
-                                }
-                            }}
                         />
+
                         <TextField
                             fullWidth
                             label="Confirm Password"
-                            placeholder="Repeat your password"
                             type="password"
+                            placeholder="Repeat your password"
                             {...register("confirmPassword")}
                             error={!!errors.confirmPassword}
                             helperText={errors.confirmPassword?.message}
-                            sx={{
-                                "& .MuiOutlinedInput-root": {
-                                    borderRadius: "12px",
-                                }
-                            }}
                         />
+
                         <Button
                             type="submit"
                             fullWidth
@@ -214,36 +171,40 @@ export function Signup() {
                             size="large"
                             disabled={isSubmitting}
                             sx={{
-                                py: 1.8,
+                                py: 2,
+                                mt: 2,
                                 fontSize: "1.1rem",
-                                borderRadius: "12px",
+                                borderRadius: 3,
                                 textTransform: "none",
-                                fontWeight: 700,
-                                boxShadow: `0 8px 25px -8px ${alpha(theme.palette.secondary.main, 0.52)}`,
+                                fontWeight: 800,
+                                background: "linear-gradient(135deg, #ec4899 0%, #f43f5e 100%)",
+                                boxShadow: `0 8px 25px -8px ${alpha(theme.palette.secondary.main, 0.5)}`,
                                 "&:hover": {
-                                    boxShadow: `0 12px 30px -10px ${alpha(theme.palette.secondary.main, 0.6)}`,
+                                    boxShadow: `0 12px 30px -10px ${alpha(theme.palette.secondary.main, 0.7)}`,
                                 }
                             }}
                         >
-                            {isSubmitting ? "Creating account..." : "Sign Up"}
+                            {isSubmitting ? "Creating account..." : "Get Started"}
                         </Button>
                     </Stack>
 
-                    <Box sx={{ mt: 5, textAlign: "center" }}>
-                        <Typography color="text.secondary">
+                    <Box sx={{ mt: 5 }}>
+                        <Typography variant="body2" color="text.secondary">
                             Already have an account?{" "}
                             <MuiLink component={Link} to="/login" sx={{
-                                color: theme.palette.secondary.main,
+                                color: theme.palette.secondary.light,
                                 fontWeight: 700,
                                 textDecoration: "none",
-                                "&:hover": { textDecoration: "underline" }
+                                transition: "all 0.2s",
+                                "&:hover": { color: "#fff" }
                             }}>
                                 Sign in here
                             </MuiLink>
                         </Typography>
                     </Box>
-                </Box>
-            </Box>
-        </Box >
+                </MotionBox>
+            </Container>
+        </Box>
     );
 }
+
