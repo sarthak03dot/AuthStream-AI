@@ -1,13 +1,36 @@
+import { lazy, Suspense } from "react";
 import {
   createBrowserRouter,
 } from "react-router-dom";
 
 import { PublicLayout } from "./layouts/PublicLayout";
 import { ProtectedLayout } from "./layouts/ProtectedLayout";
-import { Login } from "./features/auth/Login";
-import { Signup } from "./features/auth/Signup";
-import { ChatWindow } from "./features/chat/ChatWindow";
-import { LandingPage } from "./features/landing/LandingPage";
+
+// Lazy load components
+const Login = lazy(() => import("./features/auth/Login").then(m => ({ default: m.Login })));
+const Signup = lazy(() => import("./features/auth/Signup").then(m => ({ default: m.Signup })));
+const ChatWindow = lazy(() => import("./features/chat/ChatWindow").then(m => ({ default: m.ChatWindow })));
+const LandingPage = lazy(() => import("./features/landing/LandingPage").then(m => ({ default: m.LandingPage })));
+
+// Loading component
+const PageLoader = () => (
+  <div style={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    background: '#020617',
+    color: '#6366f1'
+  }}>
+    Loading...
+  </div>
+);
+
+const withSuspense = (Component: React.ReactNode) => (
+  <Suspense fallback={<PageLoader />}>
+    {Component}
+  </Suspense>
+);
 
 export const router = createBrowserRouter([
   {
@@ -15,15 +38,15 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/login",
-        element: <Login />,
+        element: withSuspense(<Login />),
       },
       {
         path: "/signup",
-        element: <Signup />,
+        element: withSuspense(<Signup />),
       },
       {
         path: "/",
-        element: <LandingPage />,
+        element: withSuspense(<LandingPage />),
       },
     ],
   },
@@ -32,12 +55,12 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/chat",
-        element: <ChatWindow />,
+        element: withSuspense(<ChatWindow />),
       },
     ],
   },
   {
     path: "*",
-    element: <Login />,
+    element: withSuspense(<Login />),
   },
 ]);
